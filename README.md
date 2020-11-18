@@ -1,2 +1,3 @@
-# compute-fractal-dimension-local-optima-networks
-Code for computing multifractal dimension spectra for local optima networks (LONs)
+# fractal-dimension-of-local-optima-networks
+Code for computing fractal dimensions of local optima networks.
+Please see inside "deterministic" and "probabilistic" directories for individual instructions on how to compile and run the programs.
