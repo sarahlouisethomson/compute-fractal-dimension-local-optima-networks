@@ -52,24 +52,17 @@ void add_node(int i, struct node** headRef, float fitness);
 void clear_lists(int cluster_size);
 void free_ivector(int *v, long nl, long nh);
 float mean(int m, int a[]);
-float median(int m, int a[]);
-int mimumum(int m, int a[]);
-int maximum(int m, int a[]);
 int d = 0;
 struct node ** neigh_list;
 struct node ** full_vertex_set;
 int * sandbox_center_nodes;
 int diameter_of_network;
-int * radius_of_sandbox_values;
 int current_radius;
 int *box_sizes;
-float * values_for_q_generalised_dimensions;
-float (*generalised_fractal_dimensions)[60][60];
-float (*detail_observed)[60][60];
-float (*scale_used)[60][60];
 float current_value_for_q;
 int * all_vertices;
 float * mean_bubble_at_certain_radius;
+float *values_for_q_generalised_dimensions;
 int *neighbors;
 float *fitnesses;
 float *values_for_epsilon;
@@ -160,54 +153,6 @@ float mean(int m, int a[]) {
 }
 
 
-float median(int n, int x[]) {
-    float temp;
-    int i, j;
-    // the following two loops sort the array x in ascending order
-    for(i=0; i<n-1; i++) {
-        for(j=i+1; j<n; j++) {
-            if(x[j] < x[i]) {
-                // swap elements
-                temp = x[i];
-                x[i] = x[j];
-                x[j] = temp;
-            }
-        }
-    }
-    
-    if(n%2==0) {
-        return((x[n/2] + x[n/2 - 1]) / 2.0);
-    } else {
-        return x[n/2];
-    }
-}
-
-int minimum(int m, int a[]) {
-    int sum=0, i;
-    int the_minimum = 1000;
-    for(i=0; i<m; i++){
-        int current = a[i];
-        if(current < the_minimum)
-        {
-            the_minimum = current;
-        }
-    }
-    return the_minimum;
-}
-
-int maximum(int m, int a[]) {
-    int sum=0, i;
-    int the_maximum = 0;
-    for(i=0; i<m; i++){
-        int current = a[i];
-        if(current > the_maximum)
-        {
-            the_maximum = current;
-        }
-    }
-    return the_maximum;
-}
-
 float *fvector(int size)
 /* allocate an float vector of size n1 */
 {
@@ -232,21 +177,6 @@ void allocate_mem(float*** arr, int n, int m)
     *arr = (float**)malloc(n*sizeof(float*));
     for(int i=0; i<n; i++)
         (*arr)[i] = (float*)malloc(m*sizeof(float));
-}
-
-void shuffle(int *array, size_t n)
-{
-    if (n > 1)
-    {
-        size_t i;
-        for (i = 0; i < n - 1; i++)
-        {
-            size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
-            int t = array[j];
-            array[j] = array[i];
-            array[i] = t;
-        }
-    }
 }
 
 void free_ivector(int *v, long nl, long nh)
@@ -300,14 +230,9 @@ float SANDBOX(char *fileName, int cluster_size, int l_b, int number_centres, int
     int edge_counter = 0;
     cycle_count++;
     int source_node,destination_node;
-    float boxno,paint_box();
     int source_fitness, destination_fitness;
-    int are_neighbors(),*color;
-    int unboxed,new_size,old_size,id1,id2,stage,*re_neighbors;
-    int * dist_to_hub;
-    struct node *current,*cur2,*hubs_list;
-    void locate_hubs();
-     box_sizes=ivector(0, number_centres);
+    struct node *current,*cur2;
+    box_sizes=ivector(0, number_centres);
     for(int i=0;i<number_centres;i++) box_sizes[i]=0;
     float inverse_edge_weight;
     int i;
