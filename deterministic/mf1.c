@@ -15,11 +15,11 @@ To compile: gcc mf1.c -o multifractal-analysis -lm
 
 ... or "make" with the makefile provided.
 
-To run you will need a local optima network in Pajek format including fitness values for each node and edge weights. 
+To run you will need a local optima network in Pajek format including fitness values for each node.
 
 Nodes must be named as 0 - (n-1). 
 
-Each line of the input network text file will be: NODENAME1 NODEFITNESS1 NODENAME2 NODEFITNESS2 EDGEWEIGHT\n 
+Each line of the input network text file will be: NODENAME1 NODEFITNESS1 NODENAME2 NODEFITNESS2\n 
 
 To run: ./multifractal-analysis INPUTNETWORK.txt N OUTPUTFILE.txt NETWORKDIAMETER NUMBERCENTRES DISTANCESTABLE.TXT
 
@@ -47,28 +47,18 @@ typedef struct node
 
 int *ivector(long nl, long nh);
 float *fvector(int size);
-void add_node(int i, struct node** headRef, float fitness);
 void clear_lists(int cluster_size);
 void free_ivector(int *v, long nl, long nh);
 float mean(int m, int a[]);
-float median(int m, int a[]);
-int mimumum(int m, int a[]);
-int maximum(int m, int a[]);
 int d = 0;
 struct node ** neigh_list;
 struct node ** full_vertex_set; 
 int * sandbox_center_nodes;
 int diameter_of_network; 
-int * radius_of_sandbox_values;
-float * values_for_q_generalised_dimensions;
-float (*generalised_fractal_dimensions)[60][60];
-float (*detail_observed)[60][60];
-float (*scale_used)[60][60];
 int * all_vertices;
 int *neighbors;
 int *box_sizes;
 float *fitnesses;
-float *values_for_epsilon;
 float *boxed_fitnesses;
 int * size_of_boxes;
 int cycle_count = 0 ;
@@ -153,57 +143,6 @@ float mean(int m, int a[]) {
     return((float)sum/m);
 }
 
-
-float median(int n, int x[]) {
-    float temp;
-    int i, j;
-    // the following two loops sort the array x in ascending order
-    for(i=0; i<n-1; i++) {
-        for(j=i+1; j<n; j++) {
-            if(x[j] < x[i]) {
-                // swap elements
-                temp = x[i];
-                x[i] = x[j];
-                x[j] = temp;
-            }
-        }
-    }
-    
-    if(n%2==0) {
-        // if there is an even number of elements, return mean of the two elements in the middle
-        return((x[n/2] + x[n/2 - 1]) / 2.0);
-    } else {
-        // else return the element in the middle
-        return x[n/2];
-    }
-}
-
-int minimum(int m, int a[]) {
-    int sum=0, i;
-    int the_minimum = 1000;
-    for(i=0; i<m; i++){
-        int current = a[i];
-        if(current < the_minimum)
-        {
-            the_minimum = current;
-        }
-    }
-    return the_minimum;
-}
-
-int maximum(int m, int a[]) {
-    int sum=0, i;
-    int the_maximum = 0;
-    for(i=0; i<m; i++){
-        int current = a[i];
-        if(current > the_maximum)
-        {
-            the_maximum = current;
-        }
-    }
-    return the_maximum;
-}
-
 float *fvector(int size)
 /* allocate an float vector of size n1 */
 {
@@ -223,137 +162,46 @@ int *ivector(long nl, long nh)
     return v-nl+1;
 }
 
-void allocate_mem(float*** arr, int n, int m)
-{
-    *arr = (float**)malloc(n*sizeof(float*));
-    for(int i=0; i<n; i++)
-        (*arr)[i] = (float*)malloc(m*sizeof(float));
-}
-
-void shuffle(int *array, size_t n)
-{
-    if (n > 1)
-    {
-        size_t i;
-        for (i = 0; i < n - 1; i++)
-        {
-            size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
-            int t = array[j];
-            array[j] = array[i];
-            array[i] = t;
-        }
-    }
-}
-
 void free_ivector(int *v, long nl, long nh)
 /* free an int vector allocated with ivector() */
 {
     free((char*) (v+nl-1));
 }
 
-
-void add_bottom_node(i,headRef)
-int i;
-struct node** headRef;
-{
-    struct node *newnode,*current;
-    
-    newnode = (struct node *)malloc(sizeof(struct node));
-    newnode->data=i;
-    newnode->next=NULL;
-    if(*headRef==NULL) *headRef=newnode;
-        else
-        {
-            current=*headRef;
-            while(current->next!=NULL) current=current->next;
-            current->next=newnode;
-        }
-    
-    return;
-}
-
-void add_node(i,headRef,fitness)
-int i;
-float fitness;
-struct node** headRef;
-{
-    struct node *newnode;
-    
-    newnode = (struct node *)malloc(sizeof(struct node));
-    newnode->data=i;
-    newnode->fitness = fitness;
-    newnode->next=*headRef;
-    
-    
-    *headRef=newnode;
-    
-    add_bottom_node(i, full_vertex_set);
-    
-    return;
-}
-
 float SANDBOX(char *fileName, int cluster_size, int l_b, float q_frommain, int r_frommain, float e_frommain, int number_centres, int **matrix){
     
+    cycle_count++;
     int edge_counter = 0;
-    cycle_count++; 
     int source_node,destination_node;
-    float boxno,paint_box();
-    
-     int source_fitness, destination_fitness;
-    int are_neighbors(),*color;
-    int unboxed,new_size,old_size,id1,id2,stage,*re_neighbors;
-    float *dist_to_hub;
-    struct node *current,*cur2,*hubs_list;
-    void locate_hubs();
-    
-    float inverse_edge_weight;
-    
-    int i;
+    int source_fitness, destination_fitness;
     FILE *fp;
     fp = fopen(fileName,"r");
-    
     neighbors=ivector(0,cluster_size-1);
     box_sizes=ivector(0, number_centres);
     int sizee = cluster_size-1;
     fitnesses=fvector(cluster_size);
-    
     size_of_boxes = ivector(0,cluster_size);
-    
     sandbox_center_nodes = ivector(0, number_centres);
-    for(int i = 0; i < number_centres; i++) sandbox_center_nodes[i] = 0;
-    
+    for(int i=0;i<number_centres; i++) sandbox_center_nodes[i]=0;
     for(int i=0;i<cluster_size;i++) neighbors[i]=0;
     for(int i=0;i<number_centres;i++) box_sizes[i]=0;
     for(int i=0;i<cluster_size;i++) size_of_boxes[i]=0;
-    
     for(int i=0;i<cluster_size;i++) fitnesses[i]=0.0;
-    
-     if(cycle_count == 1){
-        neigh_list=(struct node **)malloc(cluster_size*sizeof(struct node));
-        
-        for(int i=0;i<cluster_size;i++){
-            neigh_list[i]=(struct node *)malloc(sizeof(struct node));
-            neigh_list[i]=NULL;
-        }
-    }
     
     if(cycle_count == 1){
         boxed_fitnesses=fvector(sizee);
         
         for(int i=0;i<sizee;i++) boxed_fitnesses[i]=0.0;
     }
-    
-    inverse_edge_weight = 0.0;
-    int linecount = 0;
-    float inv = 0.0;
+
     source_node = 0;
     source_fitness = 0;
     destination_fitness = 0;
     destination_node = 0;
     
     while(!feof(fp)){
-        linecount++; 
-        fscanf(fp,"%d %d %d %d %f\n",&source_node,&source_fitness,&destination_node,&destination_fitness,&inv);
+      
+        fscanf(fp,"%d %d %d %d\n",&source_node,&source_fitness,&destination_node,&destination_fitness);
         neighbors[source_node]++;
         fitnesses[source_node]++;
         neighbors[destination_node]++;
@@ -365,8 +213,6 @@ float SANDBOX(char *fileName, int cluster_size, int l_b, float q_frommain, int r
             boxed_fitnesses[source_node] = source_fitness;
             boxed_fitnesses[destination_node] = destination_fitness;
         }
-        add_node(source_node,&neigh_list[destination_node],source_fitness);
-        add_node(destination_node,&neigh_list[source_node], destination_fitness);
     }
     fclose(fp); 
 
@@ -379,10 +225,11 @@ float SANDBOX(char *fileName, int cluster_size, int l_b, float q_frommain, int r
     int current_sandbox_center;
  
    for(int iterator = 0; iterator < number_centres; iterator++){
-         
-       current_sandbox_center = sandbox_center_nodes[iterator];   
+      
+       current_sandbox_center = sandbox_center_nodes[iterator];  
+      
        size_of_boxes[current_sandbox_center] = 0;
-        
+       
         d = r_frommain;
         
         for(int node_possibly_within_sphere = 0; node_possibly_within_sphere < cluster_size; node_possibly_within_sphere ++){
@@ -392,7 +239,9 @@ float SANDBOX(char *fileName, int cluster_size, int l_b, float q_frommain, int r
                 current_node = node_possibly_within_sphere;
                 int while_count = 0;
                     
+                   
                     float fitness_one = boxed_fitnesses[node_possibly_within_sphere];
+                   
                     fitness_one = fabs(fitness_one);
                     
                     float fitness_two = boxed_fitnesses[current_sandbox_center];
@@ -454,13 +303,7 @@ int main(int argc, char *argv[])
     rows = size;
     int **matrix = readmatrix(&rows, &cols, argv[6]);    
     all_vertices = ivector(0, size);
-    full_vertex_set = (struct node **)malloc(size*sizeof(struct node));
-    for(int i=0;i<size;i++){
-        
-        full_vertex_set[i]=(struct node *)malloc(sizeof(struct node));
-        full_vertex_set[i]=NULL;
-        
-    }
+  
     printf("%s", argv[1]);
     diameter_of_network = atoi(argv[4]);
  
