@@ -66,7 +66,7 @@ float *values_for_q_generalised_dimensions;
 int *neighbors;
 float *fitnesses;
 float *values_for_epsilon;
-float *boxed_fitnesses;
+int *node_fitnesses;
 float epsilon = 0.0;
 int * size_of_boxes;
 int cycle_count = 0 ;
@@ -232,20 +232,16 @@ float SANDBOX(char *fileName, int cluster_size, int l_b, int number_centres, int
     int source_node,destination_node;
     int source_fitness, destination_fitness;
     struct node *current,*cur2;
-    box_sizes=ivector(0, number_centres);
+    box_sizes=ivector(0, number_centres-1);
     for(int i=0;i<number_centres;i++) box_sizes[i]=0;
     float inverse_edge_weight;
     int i;
     FILE *fp;
     fp = fopen(fileName,"r");
     neighbors=ivector(0,cluster_size-1);
-    int sizee = cluster_size-1;
-    fitnesses=fvector(cluster_size);
-    size_of_boxes = ivector(0,cluster_size);
+    size_of_boxes = ivector(0,cluster_size-1);
     
     for(int i=0;i<cluster_size;i++) neighbors[i]=0;
-    
-    for(int i=0;i<cluster_size;i++) fitnesses[i]=0.0;
     
     if(cycle_count == 1){
         neigh_list=(struct node **)malloc(cluster_size*sizeof(struct node));
@@ -257,8 +253,8 @@ float SANDBOX(char *fileName, int cluster_size, int l_b, int number_centres, int
     }
     
    if(cycle_count == 1){
-    boxed_fitnesses=fvector(sizee);
-    for(int i=0;i<sizee;i++) boxed_fitnesses[i]=0.0; }
+    node_fitnesses=ivector(0, cluster_size-1);
+    for(int i=0;i<cluster_size;i++) node_fitnesses[i]=0; }
    
     inverse_edge_weight = 0.0;
     int linecount = 0;
@@ -279,13 +275,11 @@ float SANDBOX(char *fileName, int cluster_size, int l_b, int number_centres, int
         if(inv > maximum_prob) maximum_prob = inv;
         
         neighbors[source_node]++;
-        fitnesses[source_node] = source_fitness;
         neighbors[destination_node]++;
-        fitnesses[destination_node] = destination_fitness;
         
         if(cycle_count == 1){
-            boxed_fitnesses[source_node] = source_fitness;
-            boxed_fitnesses[destination_node] = destination_fitness;
+            node_fitnesses[source_node] = source_fitness;
+            node_fitnesses[destination_node] = destination_fitness;
         }
 
         add_node(source_node,&neigh_list[destination_node],source_fitness);
@@ -366,6 +360,7 @@ float SANDBOX(char *fileName, int cluster_size, int l_b, int number_centres, int
     double mean_nodes_in_bubble = mean(number_centres, box_sizes);
     free_ivector(size_of_boxes,0,cluster_size-1);
     free_ivector(neighbors,0,cluster_size-1);
+    free_ivector(sandbox_center_nodes, 0, number_centres-1);
     return mean_nodes_in_bubble;
 }
 
