@@ -307,19 +307,21 @@ int main(int argc, char *argv[])
         all_vertices[k] = k;
     }
 
-    int diameter_end = 10;
-    if(diameter_end > diameter_of_network - 2){
-        diameter_end = diameter_of_network - 2;
-    }
-    int combinations = 20*(diameter_end)*2;
+    //int diameter_end = 10;
+    //if(diameter_end > diameter_of_network - 2){
+    //    diameter_end = diameter_of_network - 2;
+    //}
+	
+    int diameter_end = diameter_of_network - 2;
+    int combinations = 60*(diameter_end)*10;
     printf("%d combinations.\n", combinations);
     
     float q_passed = 3.00;
-    for(int i = 0; i < 20; i++){
+    for(int i = 0; i < 60; i++){
         int r_passed = 2;
 	 for(int j = 0; j < diameter_end; j++){
-         float e_passed = 0.05;
-	 	 for(int k = 0; k < 2; k++){
+         float e_passed = 0.01;
+	 	 for(int k = 0; k < 10; k++){
                 mb = (double)size;
                 lb = 0;
                 lb ++;
@@ -337,11 +339,11 @@ int main(int argc, char *argv[])
                 fprintf(fp, "%f\n",dimension);
                 fclose(fp);
                 printf("fractal dimension: %f\n", dimension);
-                e_passed = e_passed + 0.05;
+                e_passed = e_passed + 0.02;
                         }
                 r_passed = r_passed + 1;
                     }
-            q_passed = q_passed + 0.3;
+            q_passed = q_passed + 0.1;
                 }
     
     return 0;
